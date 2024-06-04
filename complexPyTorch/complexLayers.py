@@ -222,9 +222,11 @@ class NaiveComplexBatchNorm1d(Module):
         momentum=0.1,
         affine=True,
         track_running_stats=True,
+        device: str="cpu",
         dtype=torch.complex64,
     ):
         super(NaiveComplexBatchNorm1d, self).__init__()
+        self.device = device
         self.bn_r = BatchNorm1d(
             num_features, eps, momentum, affine, track_running_stats
         )
@@ -234,9 +236,9 @@ class NaiveComplexBatchNorm1d(Module):
         self.dtype = dtype
 
     def forward(self, inp):
-        return self.bn_r(inp.real).type(self.dtype) + 1j * self.bn_i(
+        return (self.bn_r(inp.real).type(self.dtype) + 1j * self.bn_i(
             inp.imag
-        ).type(self.dtype)
+        ).type(self.dtype)).to(self.device)
 
 
 class NaiveComplexBatchNorm2d(Module):
@@ -251,21 +253,35 @@ class NaiveComplexBatchNorm2d(Module):
         momentum=0.1,
         affine=True,
         track_running_stats=True,
+        device: str="cpu",
         dtype=torch.complex64
     ):
         super(NaiveComplexBatchNorm2d, self).__init__()
+        self.device=device
+
         self.bn_r = BatchNorm2d(
-            num_features, eps, momentum, affine, track_running_stats
+            num_features, 
+            eps, 
+            momentum, 
+            affine, 
+            track_running_stats,
+            device=self.device
         )
+
         self.bn_i = BatchNorm2d(
-            num_features, eps, momentum, affine, track_running_stats
+            num_features, 
+            eps, 
+            momentum, 
+            affine, 
+            track_running_stats,
+            device=self.device
         )
         self.dtype=dtype
 
     def forward(self, inp):
-        return self.bn_r(inp.real).type(self.dtype) + 1j * self.bn_i(
+        return (self.bn_r(inp.real).type(self.dtype) + 1j * self.bn_i(
             inp.imag
-        ).type(self.dtype)
+        ).type(self.dtype)).to(self.device)
 
 
 class _ComplexBatchNorm(Module):
@@ -278,6 +294,7 @@ class _ComplexBatchNorm(Module):
         momentum=0.1,
         affine=True,
         track_running_stats=True,
+        device: str="cpu",
         dtype=torch.complex64
     ):
         super(_ComplexBatchNorm, self).__init__()
@@ -286,6 +303,7 @@ class _ComplexBatchNorm(Module):
         self.momentum = momentum
         self.affine = affine
         self.track_running_stats = track_running_stats
+        self.device = device
         self.dtype = dtype
         if self.affine:
             self.weight = Parameter(torch.Tensor(num_features, 3))
@@ -414,7 +432,7 @@ class ComplexBatchNorm2d(_ComplexBatchNorm):
             ).type(
                 self.dtype
             )
-        return inp
+        return inp.to(self.device)
 
 
 class ComplexBatchNorm1d(_ComplexBatchNorm):
@@ -506,7 +524,7 @@ class ComplexBatchNorm1d(_ComplexBatchNorm):
             )
 
         del Crr, Cri, Cii, Rrr, Rii, Rri, det, s, t
-        return inp
+        return inp.to(self.device)
 
 
 
